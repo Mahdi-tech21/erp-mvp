@@ -27,7 +27,8 @@ it('hides menu entries whose route does not exist yet', function () {
     $routes = collect($menu)->flatMap(fn ($section) => $section['items'])->pluck('route');
 
     expect($routes)->toContain('dashboard')
-        ->and($routes)->not->toContain('customers.index');
+        ->and($routes)->toContain('customers.index')
+        ->and($routes)->not->toContain('reports.index');
 });
 
 it('lets a module add a sidebar entry only once its route exists', function () {
