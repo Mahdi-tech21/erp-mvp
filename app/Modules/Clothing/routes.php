@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Clothing\Http\Controllers\StockAdjustmentController;
+use App\Modules\Clothing\Http\Controllers\StockReportController;
 use App\Modules\Clothing\Http\Controllers\VariantController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,4 +13,7 @@ Route::middleware(['web', 'auth'])->prefix('clothing')->name('clothing.')->group
     Route::put('stock/{variant}', [VariantController::class, 'update'])->name('stock.update');
 
     Route::post('stock/{variant}/adjust', StockAdjustmentController::class)->name('stock.adjust');
+
+    Route::get('reports/stock-on-hand', [StockReportController::class, 'onHand'])->name('reports.on-hand');
+    Route::get('reports/low-stock', [StockReportController::class, 'lowStock'])->name('reports.low');
 });

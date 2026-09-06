@@ -21,6 +21,8 @@ class ClothingServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         $registry->addMenuItem('Stock', 'clothing.stock.index', 'Clothing', 'items', 10);
+        $registry->addMenuItem('Stock on hand', 'clothing.reports.on-hand', 'Clothing', 'reports', 20);
+        $registry->addMenuItem('Low stock', 'clothing.reports.low', 'Clothing', 'reports', 30);
         $registry->addSeeder(ClothingDemoSeeder::class);
 
         // Seam #2: the variant picker on every core document line.
