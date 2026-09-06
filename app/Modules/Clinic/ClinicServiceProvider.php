@@ -2,7 +2,9 @@
 
 namespace App\Modules\Clinic;
 
+use App\Modules\Clinic\Models\Appointment;
 use App\Support\ModuleRegistry;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\ServiceProvider;
 
 class ClinicServiceProvider extends ServiceProvider
@@ -17,5 +19,15 @@ class ClinicServiceProvider extends ServiceProvider
         $registry->addMenuItem('Appointments', 'clinic.appointments.index', 'Clinic', 'calendar', 20);
 
         $registry->addSeeder(ClinicDemoSeeder::class);
+
+        $registry->addDashboardTile(fn () => [
+            'label' => "Today's appointments",
+            'value' => (string) Appointment::query()
+                ->whereBetween('starts_at', [Carbon::today(), Carbon::today()->endOfDay()])
+                ->whereIn('status', ['scheduled', 'done'])
+                ->count(),
+            'route' => 'clinic.appointments.index',
+            'icon' => 'calendar',
+        ]);
     }
 }

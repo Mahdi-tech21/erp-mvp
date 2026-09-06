@@ -1,12 +1,24 @@
 <x-app-layout title="Dashboard">
-    <x-card>
-        <h2 class="text-sm font-semibold text-gray-900">Welcome</h2>
-        <p class="mt-1 text-sm text-gray-600">
-            The core accounting app is running. Use the sidebar to manage customers,
-            suppliers, items, invoices, bills, payments and expenses.
-        </p>
-        <p class="mt-4 text-xs text-gray-400">
-            Summary tiles (receivables, payables, open documents) arrive in a later build step.
-        </p>
-    </x-card>
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        @foreach ($tiles as $tile)
+            @php
+                $href = empty($tile['route']) ? null : route($tile['route']);
+                $classes = 'block rounded-xl border border-gray-200 bg-white p-5 shadow-sm'
+                    .($href ? ' transition hover:border-indigo-300 hover:shadow' : '');
+            @endphp
+
+            <a @if ($href) href="{{ $href }}" @endif class="{{ $classes }}">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-500">{{ $tile['label'] }}</span>
+                    @if (! empty($tile['icon']))
+                        <x-icon :name="$tile['icon']" class="size-4 text-gray-300" />
+                    @endif
+                </div>
+                <div class="mt-2 text-2xl font-semibold tracking-tight text-gray-900 tabular-nums">{{ $tile['value'] }}</div>
+                @if (! empty($tile['hint']))
+                    <div class="mt-1 text-xs text-gray-400">{{ $tile['hint'] }}</div>
+                @endif
+            </a>
+        @endforeach
+    </div>
 </x-app-layout>

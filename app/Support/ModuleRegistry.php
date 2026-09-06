@@ -29,6 +29,9 @@ class ModuleRegistry
     /** @var list<class-string> */
     protected array $seeders = [];
 
+    /** @var list<callable> */
+    protected array $dashboardTiles = [];
+
     /** @var list<array{partial: string, header: string}> */
     protected array $lineFields = [];
 
@@ -145,6 +148,23 @@ class ModuleRegistry
     public function seeders(): array
     {
         return $this->seeders;
+    }
+
+    /**
+     * A module adds a dashboard tile. The callback runs at render time and
+     * returns ['label' => ..., 'value' => ..., 'hint'? , 'route'? , 'icon'? ].
+     */
+    public function addDashboardTile(callable $tile): void
+    {
+        $this->dashboardTiles[] = $tile;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function dashboardTiles(): array
+    {
+        return array_map(fn ($tile) => $tile(), $this->dashboardTiles);
     }
 
     /**

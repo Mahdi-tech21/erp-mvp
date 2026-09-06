@@ -6,11 +6,12 @@ it('redirects the root url to the dashboard', function () {
     $this->get('/')->assertRedirect('/dashboard');
 });
 
-it('renders the dashboard with the sidebar', function () {
+it('renders the dashboard with the sidebar and KPI tiles', function () {
     $this->get('/dashboard')
         ->assertOk()
         ->assertSee('Customers')
-        ->assertSee('Welcome');
+        ->assertSee('Receivables')
+        ->assertSee('Open documents');
 });
 
 it('serves every core screen and has no dead menu links', function () {

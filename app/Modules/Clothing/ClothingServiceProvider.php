@@ -25,6 +25,13 @@ class ClothingServiceProvider extends ServiceProvider
         $registry->addMenuItem('Low stock', 'clothing.reports.low', 'Clothing', 'reports', 30);
         $registry->addSeeder(ClothingDemoSeeder::class);
 
+        $registry->addDashboardTile(fn () => [
+            'label' => 'Low stock variants',
+            'value' => (string) ItemVariant::query()->whereColumn('stock_qty', '<=', 'reorder_level')->count(),
+            'route' => 'clothing.reports.low',
+            'icon' => 'items',
+        ]);
+
         // Seam #2: the variant picker on every core document line.
         $registry->addLineField(
             partial: 'clothing::partials.line-fields',
