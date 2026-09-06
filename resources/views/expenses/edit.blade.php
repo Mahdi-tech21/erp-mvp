@@ -1,7 +1,3 @@
-@extends('layouts.app')
-
-@section('title', 'Edit Expense')
-
-@section('content')
+<x-app-layout title="Edit Expense">
     @include('expenses._form', ['action' => route('expenses.update', $expense), 'method' => 'PUT'])
-@endsection
+</x-app-layout>

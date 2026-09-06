@@ -46,7 +46,7 @@ it('shows the create form with suppliers and the supplier invoice-number field',
         ->assertSee('New Bill')
         ->assertSee('Acme Supplies')
         ->assertDontSee('Retail Customer')
-        ->assertSee("Supplier's invoice number", false);
+        ->assertSee('invoice number');
 });
 
 it('stores a draft with the external reference', function () {

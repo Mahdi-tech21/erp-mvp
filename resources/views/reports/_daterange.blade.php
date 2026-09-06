@@ -1,14 +1,12 @@
 {{-- $route, $from, $to --}}
-<form method="GET" action="{{ route($route) }}" class="mb-4 flex flex-wrap items-end gap-2">
+<form method="GET" action="{{ route($route) }}" class="no-print mb-4 flex flex-wrap items-end gap-2">
     <div>
-        <label class="block text-xs font-medium text-gray-500">From</label>
-        <input type="date" name="from" value="{{ $from->toDateString() }}"
-               class="rounded-md border border-gray-300 px-3 py-1.5 text-sm">
+        <label class="mb-1 block text-xs font-medium text-gray-500">From</label>
+        <x-input type="date" name="from" :value="$from->toDateString()" class="w-auto" />
     </div>
     <div>
-        <label class="block text-xs font-medium text-gray-500">To</label>
-        <input type="date" name="to" value="{{ $to->toDateString() }}"
-               class="rounded-md border border-gray-300 px-3 py-1.5 text-sm">
+        <label class="mb-1 block text-xs font-medium text-gray-500">To</label>
+        <x-input type="date" name="to" :value="$to->toDateString()" class="w-auto" />
     </div>
-    <button class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50">Apply</button>
+    <x-btn type="submit" variant="secondary" size="sm">Apply</x-btn>
 </form>

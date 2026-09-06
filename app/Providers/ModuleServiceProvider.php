@@ -18,7 +18,7 @@ class ModuleServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        View::composer('layouts.app', function ($view) {
+        View::composer(['components.app-layout', 'components.print-layout'], function ($view) {
             $registry = $this->app->make(ModuleRegistry::class);
 
             $view->with('menu', $registry->menu());

@@ -66,9 +66,9 @@ class ModuleRegistry
     /**
      * Seam #1: a module registers a sidebar entry from its service provider.
      */
-    public function addMenuItem(string $label, string $route, ?string $section = null, int $order = 100): void
+    public function addMenuItem(string $label, string $route, ?string $section = null, ?string $icon = null, int $order = 100): void
     {
-        $this->moduleItems[] = compact('label', 'route', 'section', 'order');
+        $this->moduleItems[] = compact('label', 'route', 'section', 'icon', 'order');
     }
 
     /**
@@ -91,6 +91,7 @@ class ModuleRegistry
                     $sections[$key]['items'][] = [
                         'label' => $item['label'],
                         'route' => $item['route'],
+                        'icon' => $item['icon'] ?? null,
                     ];
                 }
             }
@@ -109,6 +110,7 @@ class ModuleRegistry
             $sections[$key]['items'][] = [
                 'label' => $item['label'],
                 'route' => $item['route'],
+                'icon' => $item['icon'] ?? null,
             ];
         }
 

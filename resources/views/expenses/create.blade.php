@@ -1,7 +1,3 @@
-@extends('layouts.app')
-
-@section('title', 'New Expense')
-
-@section('content')
+<x-app-layout title="New Expense">
     @include('expenses._form', ['action' => route('expenses.store'), 'method' => 'POST'])
-@endsection
+</x-app-layout>

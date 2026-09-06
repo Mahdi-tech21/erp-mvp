@@ -1,55 +1,54 @@
-@extends('layouts.app')
+<x-app-layout :title="$title">
+    <x-slot:actions>
+        <x-btn type="button" variant="secondary" onclick="window.print()">
+            <x-icon name="print" class="size-4" /> Print
+        </x-btn>
+    </x-slot:actions>
 
-@section('title', $title)
+    @include('reports._printhead', ['range' => 'As of ' . $report['as_of']->toDateString()])
 
-@section('content')
-    <form method="GET" action="{{ route($route) }}" class="mb-4 flex items-end gap-2">
+    <form method="GET" action="{{ route($route) }}" class="no-print mb-4 flex items-end gap-2">
         <div>
-            <label class="block text-xs font-medium text-gray-500">As of</label>
-            <input type="date" name="as_of" value="{{ $report['as_of']->toDateString() }}"
-                   class="rounded-md border border-gray-300 px-3 py-1.5 text-sm">
+            <label class="mb-1 block text-xs font-medium text-gray-500">As of</label>
+            <x-input type="date" name="as_of" :value="$report['as_of']->toDateString()" class="w-auto" />
         </div>
-        <button class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50">Apply</button>
+        <x-btn type="submit" variant="secondary" size="sm">Apply</x-btn>
     </form>
 
-    <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-            <thead class="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+    <x-table>
+        <x-slot:head>
+            <x-th>{{ $partyLabel }}</x-th>
+            <x-th right>Current</x-th>
+            <x-th right>1–30</x-th>
+            <x-th right>31–60</x-th>
+            <x-th right>60+</x-th>
+            <x-th right>Total</x-th>
+        </x-slot:head>
+        <tbody class="divide-y divide-gray-100">
+            @forelse ($report['rows'] as $row)
                 <tr>
-                    <th class="px-4 py-2">{{ $partyLabel }}</th>
-                    <th class="px-4 py-2 text-right">Current</th>
-                    <th class="px-4 py-2 text-right">1–30</th>
-                    <th class="px-4 py-2 text-right">31–60</th>
-                    <th class="px-4 py-2 text-right">60+</th>
-                    <th class="px-4 py-2 text-right">Total</th>
+                    <x-td class="font-medium text-gray-900">{{ $row['party'] }}</x-td>
+                    <x-td num>{{ number_format($row['current'], 2) }}</x-td>
+                    <x-td num>{{ number_format($row['b1'], 2) }}</x-td>
+                    <x-td num>{{ number_format($row['b2'], 2) }}</x-td>
+                    <x-td num class="{{ $row['b3'] > 0 ? 'text-red-600' : '' }}">{{ number_format($row['b3'], 2) }}</x-td>
+                    <x-td num class="font-medium">{{ number_format($row['total'], 2) }}</x-td>
                 </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse ($report['rows'] as $row)
-                    <tr>
-                        <td class="px-4 py-2 font-medium text-gray-900">{{ $row['party'] }}</td>
-                        <td class="px-4 py-2 text-right tabular-nums">{{ number_format($row['current'], 2) }}</td>
-                        <td class="px-4 py-2 text-right tabular-nums">{{ number_format($row['b1'], 2) }}</td>
-                        <td class="px-4 py-2 text-right tabular-nums">{{ number_format($row['b2'], 2) }}</td>
-                        <td class="px-4 py-2 text-right tabular-nums {{ $row['b3'] > 0 ? 'text-red-600' : '' }}">{{ number_format($row['b3'], 2) }}</td>
-                        <td class="px-4 py-2 text-right font-medium tabular-nums">{{ number_format($row['total'], 2) }}</td>
-                    </tr>
-                @empty
-                    <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">Nothing outstanding.</td></tr>
-                @endforelse
-            </tbody>
-            @if ($report['rows'])
-                <tfoot>
-                    <tr class="border-t border-gray-200 font-semibold">
-                        <td class="px-4 py-2 text-right text-gray-500">Total</td>
-                        <td class="px-4 py-2 text-right tabular-nums">{{ number_format($report['totals']['current'], 2) }}</td>
-                        <td class="px-4 py-2 text-right tabular-nums">{{ number_format($report['totals']['b1'], 2) }}</td>
-                        <td class="px-4 py-2 text-right tabular-nums">{{ number_format($report['totals']['b2'], 2) }}</td>
-                        <td class="px-4 py-2 text-right tabular-nums">{{ number_format($report['totals']['b3'], 2) }}</td>
-                        <td class="px-4 py-2 text-right tabular-nums">{{ number_format($report['totals']['total'], 2) }}</td>
-                    </tr>
-                </tfoot>
-            @endif
-        </table>
-    </div>
-@endsection
+            @empty
+                <x-empty :cols="6">Nothing outstanding.</x-empty>
+            @endforelse
+        </tbody>
+        @if ($report['rows'])
+            <tfoot>
+                <tr class="border-t border-gray-200 font-semibold text-gray-900">
+                    <td class="px-4 py-2.5 text-right text-gray-500">Total</td>
+                    <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($report['totals']['current'], 2) }}</td>
+                    <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($report['totals']['b1'], 2) }}</td>
+                    <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($report['totals']['b2'], 2) }}</td>
+                    <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($report['totals']['b3'], 2) }}</td>
+                    <td class="px-4 py-2.5 text-right tabular-nums">{{ number_format($report['totals']['total'], 2) }}</td>
+                </tr>
+            </tfoot>
+        @endif
+    </x-table>
+</x-app-layout>

@@ -1,7 +1,3 @@
-@extends('layouts.app')
-
-@section('title', 'New Item')
-
-@section('content')
+<x-app-layout title="New Item">
     @include('items._form', ['action' => route('items.store'), 'method' => 'POST'])
-@endsection
+</x-app-layout>
