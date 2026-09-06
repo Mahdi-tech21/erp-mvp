@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\CompanySetting;
 use App\Models\User;
+use App\Support\ModuleRegistry;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -26,5 +27,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call(DemoDataSeeder::class);
+
+        foreach (app(ModuleRegistry::class)->seeders() as $seeder) {
+            $this->call($seeder);
+        }
     }
 }

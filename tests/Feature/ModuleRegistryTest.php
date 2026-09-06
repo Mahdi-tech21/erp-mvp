@@ -37,6 +37,17 @@ it('drops a menu entry whose route does not exist', function () {
         ->and($routes)->not->toContain('does.not.exist');
 });
 
+it('registers the active clinic module and its menu items', function () {
+    $registry = app(ModuleRegistry::class);
+
+    expect($registry->isActive('clinic'))->toBeTrue();
+
+    $routes = collect($registry->menu())->flatMap(fn ($s) => $s['items'])->pluck('route');
+
+    expect($routes)->toContain('clinic.patients.index')
+        ->and($routes)->toContain('clinic.appointments.index');
+});
+
 it('lets a module add a sidebar entry only once its route exists', function () {
     $registry = app(ModuleRegistry::class);
     $registry->addMenuItem('Stock', 'clothing.stock.index', 'Clothing');

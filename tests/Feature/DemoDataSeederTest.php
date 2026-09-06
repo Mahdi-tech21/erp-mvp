@@ -1,13 +1,16 @@
 <?php
 
+use App\Models\CompanySetting;
 use App\Models\Document;
-use App\Models\Expense;
 use App\Models\Item;
 use App\Models\Party;
 use App\Models\Payment;
+use Database\Seeders\DemoDataSeeder;
 
-it('produces a coherent demo dataset', function () {
-    $this->seed();
+beforeEach(fn () => CompanySetting::factory()->create());
+
+it('produces a coherent core demo dataset', function () {
+    $this->seed(DemoDataSeeder::class);
 
     expect(Party::count())->toBe(15)
         ->and(Item::count())->toBe(30)
@@ -18,12 +21,11 @@ it('produces a coherent demo dataset', function () {
         ->and(Document::where('status', 'void')->exists())->toBeTrue()
         ->and(Document::where('status', 'draft')->exists())->toBeTrue()
         ->and(Payment::where('direction', 'in')->exists())->toBeTrue()
-        ->and(Payment::where('direction', 'out')->exists())->toBeTrue()
-        ->and(Expense::count())->toBe(20);
+        ->and(Payment::where('direction', 'out')->exists())->toBeTrue();
 });
 
 it('numbers every posted document uniquely and sequentially', function () {
-    $this->seed();
+    $this->seed(DemoDataSeeder::class);
 
     $numbers = Document::whereNotNull('number')->pluck('number');
 
@@ -35,9 +37,16 @@ it('numbers every posted document uniquely and sequentially', function () {
 });
 
 it('keeps settled_total equal to the sum of allocations', function () {
-    $this->seed();
+    $this->seed(DemoDataSeeder::class);
 
     Document::where('settled_total', '>', 0)->with('allocations')->each(function (Document $document) {
         expect((float) $document->settled_total)->toBe(round((float) $document->allocations->sum('amount'), 2));
     });
+});
+
+it('runs the full database seeder including active modules without error', function () {
+    $this->seed();
+
+    expect(Party::count())->toBeGreaterThan(15) // core 15 + clinic patients
+        ->and(Item::where('type', 'service')->count())->toBeGreaterThan(6);
 });

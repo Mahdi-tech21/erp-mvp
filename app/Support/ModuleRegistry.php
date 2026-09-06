@@ -22,8 +22,11 @@ class ModuleRegistry
     /** @var array<string, class-string> */
     protected array $providers;
 
-    /** @var list<array{label: string, route: string, section: ?string, order: int}> */
+    /** @var list<array{label: string, route: string, section: ?string, icon: ?string, order: int}> */
     protected array $moduleItems = [];
+
+    /** @var list<class-string> */
+    protected array $seeders = [];
 
     public function __construct(protected Application $app)
     {
@@ -115,6 +118,23 @@ class ModuleRegistry
         }
 
         return array_values($sections);
+    }
+
+    /**
+     * A module registers a demo-data seeder; DatabaseSeeder runs it after the
+     * core demo data, only when the module is active.
+     *
+     * @param  class-string  $seeder
+     */
+    public function addSeeder(string $seeder): void
+    {
+        $this->seeders[] = $seeder;
+    }
+
+    /** @return list<class-string> */
+    public function seeders(): array
+    {
+        return $this->seeders;
     }
 
     /**

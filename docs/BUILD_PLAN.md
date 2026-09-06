@@ -256,7 +256,11 @@ Behaviour:
 
 ## Night 2 — modules
 1. **Clinic first** (smaller, guarantees two modules exist): provider, migrations,
-   patients, appointments, invoice-from-appointment, seeder.
+   patients, appointments, invoice-from-appointment, seeder. **Done.**
+   Module lives in `app/Modules/Clinic/` (autoloaded by the `App\` PSR-4 root, no
+   composer change). `ClinicServiceProvider` loads routes/views/migrations and
+   registers menu items + a demo seeder via `ModuleRegistry` (`addMenuItem`,
+   `addSeeder`). `ACTIVE_MODULES` set for tests in `phpunit.xml`.
 2. **Clothing**: provider, migrations, variants, stock screens, line partial,
    stock listeners, seeder.
 3. Clothing reports: stock on hand, low stock.

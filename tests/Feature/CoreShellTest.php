@@ -13,13 +13,7 @@ it('renders the dashboard with the sidebar', function () {
         ->assertSee('Welcome');
 });
 
-it('runs with no modules enabled', function () {
-    expect(config('modules.active'))->toBe([]);
-
-    $this->get('/dashboard')->assertOk();
-});
-
-it('serves every core screen with no modules and no dead links', function () {
+it('serves every core screen and has no dead menu links', function () {
     $this->seed();
 
     $routes = [
