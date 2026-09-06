@@ -107,3 +107,18 @@ it('404s when a sales invoice is reached through a purchase route', function () 
 
     $this->get(route('purchase-invoices.show', $sale))->assertNotFound();
 });
+
+it('prints a bill with its external reference', function () {
+    $supplier = Party::factory()->supplier()->create();
+    $bill = Document::factory()->purchase()->create([
+        'party_id' => $supplier->id,
+        'status' => 'posted',
+        'number' => 'BILL-2026-0007',
+        'external_ref' => 'SUP-42',
+    ]);
+
+    $this->get(route('purchase-invoices.print', $bill))
+        ->assertOk()
+        ->assertSee('BILL-2026-0007')
+        ->assertSee('SUP-42');
+});

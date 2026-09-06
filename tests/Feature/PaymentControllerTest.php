@@ -7,6 +7,7 @@ use App\Models\DocumentLine;
 use App\Models\Party;
 use App\Models\Payment;
 use App\Services\DocumentService;
+use App\Services\PaymentService;
 
 beforeEach(function () {
     asAdmin();
@@ -122,6 +123,24 @@ it('validates amount and method', function () {
         'amount' => 0,
         'method' => 'bitcoin',
     ])->assertSessionHasErrors(['amount', 'method']);
+});
+
+it('renders the payment detail page with its allocations', function () {
+    $customer = Party::factory()->customer()->create();
+    $invoice = postedInvoiceFor($customer, 100);
+
+    $payment = app(PaymentService::class)->record([
+        'direction' => 'in',
+        'party_id' => $customer->id,
+        'payment_date' => now()->toDateString(),
+        'amount' => 60,
+        'method' => 'card',
+    ], [['document_id' => $invoice->id, 'amount' => 60]]);
+
+    $this->get(route('payments.show', $payment))
+        ->assertOk()
+        ->assertSee($invoice->number)
+        ->assertSee('60.00');
 });
 
 it('allocates a supplier payment to a bill', function () {

@@ -68,6 +68,15 @@ it('validates amount and method', function () {
     ])->assertSessionHasErrors(['amount', 'method']);
 });
 
+it('renders the edit form for an expense', function () {
+    $expense = Expense::factory()->create(['category' => 'Insurance', 'description' => 'Annual cover']);
+
+    $this->get(route('expenses.edit', $expense))
+        ->assertOk()
+        ->assertSee('Annual cover')
+        ->assertSee('Insurance');
+});
+
 it('updates an expense', function () {
     $expense = Expense::factory()->create(['amount' => 100]);
 

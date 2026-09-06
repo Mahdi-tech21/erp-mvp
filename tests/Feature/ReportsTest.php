@@ -84,6 +84,36 @@ it('renders A/P aging', function () {
     $this->get(route('reports.ap-aging'))->assertOk()->assertSee('Owed Supplier');
 });
 
+it('sums purchases by period', function () {
+    $supplier = Party::factory()->supplier()->create();
+    postDoc('purchase_invoice', $supplier, [[3, 100]], '2026-04-10'); // net 300, VAT 30, total 330
+
+    $this->get(route('reports.purchases', ['from' => '2026-04-01', 'to' => '2026-04-30']))
+        ->assertOk()
+        ->assertSee('300.00')
+        ->assertSee('330.00');
+});
+
+it('runs a supplier-side statement', function () {
+    $supplier = Party::factory()->supplier()->create();
+    $bill = postDoc('purchase_invoice', $supplier, [[1, 500]], '2026-02-01'); // total 550
+
+    app(PaymentService::class)->record([
+        'direction' => 'out',
+        'party_id' => $supplier->id,
+        'payment_date' => '2026-02-20',
+        'amount' => 200,
+        'method' => 'transfer',
+    ], [['document_id' => $bill->id, 'amount' => 200]]);
+
+    $this->get(route('reports.statement', [
+        'party_id' => $supplier->id, 'role' => 'supplier', 'from' => '2026-01-01', 'to' => '2026-12-31',
+    ]))
+        ->assertOk()
+        ->assertSee('550.00')
+        ->assertSee('350.00'); // closing: we still owe 350
+});
+
 it('runs a party statement balance', function () {
     $customer = Party::factory()->customer()->create();
     $invoice = postDoc('sales_invoice', $customer, [[1, 1000]], '2026-03-01'); // total 1100
