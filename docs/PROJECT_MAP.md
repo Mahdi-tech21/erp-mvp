@@ -25,20 +25,30 @@ erp-mvp/
 │   │   ├── Document.php
 │   │   ├── DocumentLine.php
 │   │   ├── Payment.php
-│   │   └── PaymentAllocation.php
+│   │   ├── PaymentAllocation.php
+│   │   ├── Expense.php
+│   │   └── AuditLog.php
 │   │
 │   ├── Services/                              ★ all business logic lives here, not in controllers
-│   │   ├── DocumentService.php                   post() / void()
+│   │   ├── DocumentService.php                   post() / void() / recalculateTotals()
 │   │   ├── PaymentService.php                    record() + allocations
 │   │   ├── NumberGenerator.php                   INV-2026-0001 numbering
 │   │   └── Reports/
 │   │       ├── AgingReport.php                   A/R and A/P
-│   │       └── StatementReport.php               party statement
+│   │       ├── StatementReport.php               party statement
+│   │       ├── VatReturnReport.php               output VAT − input VAT
+│   │       └── MarginReport.php                  revenue − COGS − expenses
 │   │
 │   ├── Events/                                ★ the join between core and modules
 │   │   ├── DocumentPosted.php
 │   │   ├── DocumentVoided.php
 │   │   └── PaymentRecorded.php
+│   │
+│   ├── Listeners/
+│   │   └── AuditLogSubscriber.php             ★ writes audit_logs from the three events
+│   │
+│   ├── Exceptions/
+│   │   └── DomainException.php                ★ broken business rule → session('error')
 │   │
 │   ├── Support/
 │   │   └── ModuleRegistry.php                 ★ boots enabled modules, assembles the menu
@@ -46,6 +56,7 @@ erp-mvp/
 │   ├── Http/
 │   │   ├── Controllers/                       ★
 │   │   │   ├── DashboardController.php
+│   │   │   ├── AuthController.php                login / logout (all routes behind `auth`)
 │   │   │   ├── BasePartyController.php           abstract, all party CRUD
 │   │   │   ├── CustomerController.php            role() = 'customer'
 │   │   │   ├── SupplierController.php            role() = 'supplier'
@@ -55,14 +66,19 @@ erp-mvp/
 │   │   │   ├── PurchaseInvoiceController.php     docType() = 'purchase_invoice'
 │   │   │   ├── DocumentActionController.php      post / void, both types
 │   │   │   ├── PaymentController.php             direction from the route
+│   │   │   ├── ExpenseController.php             plain CRUD, no engine
+│   │   │   ├── AuditLogController.php            read-only /audit screen
 │   │   │   └── ReportController.php
 │   │   └── Requests/                          ★ input validation
+│   │       ├── LoginRequest.php
 │   │       ├── StorePartyRequest.php
 │   │       ├── StoreItemRequest.php
 │   │       ├── StoreDocumentRequest.php
-│   │       └── StorePaymentRequest.php
+│   │       ├── StorePaymentRequest.php
+│   │       └── StoreExpenseRequest.php
 │   │
 │   ├── Providers/
+│   │   ├── AppServiceProvider.php             ★ Event::subscribe(AuditLogSubscriber)
 │   │   └── ModuleServiceProvider.php          ★ calls ModuleRegistry::boot()
 │   │
 │   └── Modules/                               ★★ the whole point of the demo
@@ -97,7 +113,11 @@ erp-mvp/
 │           └── resources/views/                  clinic::...
 │
 ├── config/
-│   └── modules.php                            ★ reads ACTIVE_MODULES from .env
+│   ├── modules.php                            ★ reads ACTIVE_MODULES from .env
+│   ├── menu.php                               ★ core sidebar as data
+│   ├── parties.php                            ★ customer/supplier labels + flags
+│   ├── documents.php                          ★ sales/purchase labels + party role
+│   └── expenses.php                           ★ suggested expense categories
 │
 ├── database/
 │   ├── migrations/                            ★ core tables only
@@ -108,12 +128,15 @@ erp-mvp/
 │
 ├── resources/views/
 │   ├── layouts/app.blade.php                  ★ the only layout, sidebar from ModuleRegistry
+│   ├── auth/login.blade.php                   ★ standalone, no sidebar
 │   ├── dashboard.blade.php                    ★
 │   ├── parties/                               ★ index / create / edit
 │   ├── items/                                 ★
 │   ├── documents/                             ★ index / form / show / print
 │   ├── payments/                              ★
-│   └── reports/                               ★ sales / purchases / ar-aging / ap-aging / statement
+│   ├── expenses/                              ★ index / create / edit
+│   ├── audit/                                 ★ index (read-only)
+│   └── reports/                               ★ sales / purchases / ar-aging / ap-aging / statement / vat-return / margin
 │
 ├── routes/web.php                             ★ core routes only, modules register their own
 │
@@ -139,10 +162,13 @@ erp-mvp/
 | 4 | Customers, suppliers, items | `BasePartyController` + `CustomerController` + `SupplierController`, `ItemController`, `views/parties`, `views/items` |
 | 5 | Document engine | `NumberGenerator`, `DocumentService`, `PaymentService`, `app/Events/` |
 | 6 | Sales invoices | `BaseDocumentController` + `SalesInvoiceController`, `DocumentActionController`, `views/documents/` |
+| 6a | Login gate | `AuthController`, `LoginRequest`, `auth/login.blade.php`, `auth` middleware on all routes |
+| 6b | Audit log | `audit_logs` migration, `AuditLog`, `AuditLogSubscriber`, `AuditLogController`, `views/audit/` |
 | 7 | Purchase invoices | `PurchaseInvoiceController` — ~6 lines, everything else is inherited |
 | 8 | Payments in and out | `PaymentController`, `views/payments/` |
-| 9 | The five reports | `ReportController`, `app/Services/Reports/`, `views/reports/` |
-| 10 | Tests | `tests/Feature/DocumentPostingTest.php`, `PaymentAllocationTest.php` |
+| 9 | Expenses | `expenses` migration, `Expense`, `ExpenseController`, `StoreExpenseRequest`, `config/expenses.php`, `views/expenses/` |
+| 10 | The seven reports | `ReportController`, `app/Services/Reports/`, `views/reports/` |
+| 11 | Tests | `tests/Feature/DocumentPostingTest.php`, `PaymentAllocationTest.php`, `ReportsTest.php` |
 
 ### Night 2 — the modules
 
@@ -185,21 +211,23 @@ Order is driven by foreign keys: you can't create `documents` before `parties`.
 | 7 | `..._create_document_lines_table` | `document_lines` | Invoice lines |
 | 8 | `..._create_payments_table` | `payments` | Received (`in`) and paid (`out`) |
 | 9 | `..._create_payment_allocations_table` | `payment_allocations` | Which payment settles which invoice |
+| 10 | `..._create_audit_logs_table` | `audit_logs` | Append-only action log (step 6b) |
+| 11 | `..._create_expenses_table` | `expenses` | Non-invoice spend (step 9) |
 
 ### Clothing — `app/Modules/Clothing/database/migrations/`
 
 | # | Migration file | Table | Purpose |
 |---|---|---|---|
-| 10 | `..._create_item_variants_table` | `item_variants` | Size, colour, quantity on hand |
-| 11 | `..._create_stock_movements_table` | `stock_movements` | Stock history |
-| 12 | `..._create_document_line_variants_table` | `document_line_variants` | Links an invoice line to a variant |
+| 12 | `..._create_item_variants_table` | `item_variants` | Size, colour, quantity on hand |
+| 13 | `..._create_stock_movements_table` | `stock_movements` | Stock history |
+| 14 | `..._create_document_line_variants_table` | `document_line_variants` | Links an invoice line to a variant |
 
 ### Clinic — `app/Modules/Clinic/database/migrations/`
 
 | # | Migration file | Table | Purpose |
 |---|---|---|---|
-| 13 | `..._create_patients_table` | `patients` | Patient linked to a party |
-| 14 | `..._create_appointments_table` | `appointments` | Appointments |
+| 15 | `..._create_patients_table` | `patients` | Patient linked to a party |
+| 16 | `..._create_appointments_table` | `appointments` | Appointments |
 
 **How module migrations work:** the service provider calls
 `loadMigrationsFrom(__DIR__.'/database/migrations')` only when the module is
@@ -220,6 +248,8 @@ report is a query against the transaction tables at request time.
 | A/R aging | `documents` (sales) + `payment_allocations`, bucketed by `due_date` |
 | A/P aging | Same, purchase side |
 | Party statement | `documents` + `payments` for one `party_id`, by date |
+| VAT return | `documents` (non-void): Σ `tax_amount` sales − Σ `tax_amount` purchases, by `doc_date` range |
+| Gross margin | `documents` + `document_lines` + `items.cost_price` + `expenses`, by date range |
 | Stock on hand / valuation | `item_variants` + `stock_movements` (clothing module) |
 | Low stock | `item_variants` where `stock_qty <= reorder_level` |
 
@@ -308,6 +338,29 @@ id, payment_id FK cascade, document_id FK, amount decimal(12,2), timestamps
 unique (payment_id, document_id)
 ```
 
+### expenses
+```
+id, expense_date date, category varchar, description varchar nullable,
+supplier_id FK -> parties nullable (restrictOnDelete),
+amount decimal(12,2),
+method enum('cash','card','transfer','cheque'),
+reference varchar nullable, notes text nullable, timestamps
+index (expense_date), index (category)
+```
+Standalone. No lifecycle, no allocations, no service — a controller writes it
+straight. `category` is free text; `config/expenses.php` supplies the dropdown.
+
+### audit_logs
+```
+id, user_id FK -> users nullable (nullOnDelete),
+action varchar, auditable_type varchar nullable, auditable_id bigint nullable,
+summary varchar, properties jsonb nullable, created_at
+index (auditable_type, auditable_id), index (created_at)
+```
+Append-only: no `updated_at`. `App\Listeners\AuditLogSubscriber` writes a row on
+`DocumentPosted` / `DocumentVoided` / `PaymentRecorded`, inside the same
+transaction as the action, capturing `auth()->id()`.
+
 ### item_variants  *(clothing)*
 ```
 id, item_id FK, size varchar, color varchar, sku varchar unique,
@@ -394,8 +447,10 @@ return new class extends Migration
 ```
 
 Fixed rules for every migration:
-- `restrictOnDelete()` on parties and items — they can't be deleted while in use.
+- `restrictOnDelete()` on parties and items — they can't be deleted while in use
+  (`expenses.supplier_id` follows this too).
 - `cascadeOnDelete()` only on dependent lines (`document_lines`, `payment_allocations`).
+- `nullOnDelete()` only on `audit_logs.user_id` — deleting a user keeps the history.
 - Every amount is `decimal(12,2)`, every quantity `decimal(12,3)`. No floats anywhere.
 - JSON columns are `jsonb`. Search uses `ilike`. Reports group with `date_trunc()`.
 - Never edit a migration that has already run — write a new one.

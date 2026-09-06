@@ -6,11 +6,12 @@
 | Parties (customers + suppliers), items | General ledger, chart of accounts, journal entries |
 | Sales invoices **and** purchase invoices, one engine | Credit notes, quotations, delivery notes |
 | Payments in and out, allocated to documents | Multi-currency, multi-company, bank reconciliation |
+| Expenses — non-invoice spend (rent, salaries, fuel, fees) | Recurring invoices, bank feeds, cash/bank accounts |
 | Single company-level VAT rate | Per-line tax, tax groups, withholding |
-| Reports: sales, purchases, A/R aging, A/P aging, party statement | Budgets, cost centres, fixed assets |
+| Reports: sales, purchases, A/R & A/P aging, party statement, VAT return, gross margin | Budgets, cost centres, fixed assets, balance sheet |
 | Clothing module: variants, stock in/out, valuation, low stock | Purchase orders, goods receipt notes, barcodes |
 | Clinic module: patients, appointments, invoice-from-appointment | Calendar UI, conflict detection, medical records |
-| One seeded admin user | Roles, permissions, registration |
+| Login gate, one seeded admin user, audit log | Roles, permissions, self-registration |
 
 The demo lands on **modularity + a correct document/payment engine**. Feature
 count is not the point. Cut from the bottom of the Night 2 list if you run late.
@@ -86,6 +87,27 @@ id, payment_id FK cascade, document_id FK, amount decimal(12,2), timestamps
 unique (payment_id, document_id)
 ```
 
+### expenses
+```
+id, expense_date date, category varchar, description varchar nullable,
+supplier_id FK -> parties nullable, amount decimal(12,2),
+method ENUM('cash','card','transfer','cheque'), reference varchar nullable,
+notes text nullable, timestamps
+index (expense_date), index (category)
+```
+Non-invoice spend — rent, salaries, fuel, bank fees. A plain fact, recorded once:
+no draft/post lifecycle, no allocations, no engine. `category` is free text with a
+suggested list in `config/expenses.php`. `supplier_id` is an optional payee.
+
+### audit_logs
+```
+id, user_id FK -> users nullable, action varchar,
+auditable_type varchar nullable, auditable_id bigint nullable,
+summary varchar, properties jsonb nullable, created_at
+```
+Append-only (no `updated_at`). Written by `AuditLogSubscriber` on `DocumentPosted`
+/ `DocumentVoided` / `PaymentRecorded`, inside the service transaction.
+
 ---
 
 ## Document engine (the part worth showing)
@@ -126,6 +148,15 @@ Draft documents are the only editable or deletable ones.
 3. **A/R aging** — per customer, outstanding split Current / 1–30 / 31–60 / 60+.
 4. **A/P aging** — same for suppliers.
 5. **Party statement** — documents and payments for one party, running balance.
+6. **VAT return** — for a date range: output VAT (non-void sales) − input VAT
+   (non-void purchases) = net payable. Optional month-by-month rows.
+7. **Gross margin** — for a date range: revenue (sales subtotal − discount, ex-VAT)
+   − COGS (Σ line qty × `items.cost_price`) − expenses = operating result.
+
+These three (VAT return, gross margin, expenses) exist **without a general
+ledger**. COGS uses the item's current `cost_price`, not a per-line snapshot — an
+approximation, and that is stated on the report. A true P&L / balance sheet stays
+out of scope.
 
 ---
 
@@ -195,11 +226,15 @@ Behaviour:
 5. `NumberGenerator`, `DocumentService`, `PaymentService`, the three events.
 6. Sales invoices: `BaseDocumentController` + `SalesInvoiceController` — list,
    create with dynamic line rows, edit draft, post, void, print view.
+   - 6a. Login gate — hand-rolled session auth, all routes behind `auth`.
+   - 6b. Audit log — `AuditLogSubscriber` on the three events, `/audit` screen.
 7. Purchase invoices: `PurchaseInvoiceController` (~6 lines, everything inherited)
    plus the `external_ref` field.
 8. Payments in and out, with allocation to open documents.
-9. The five reports.
-10. Pest tests: post assigns sequential numbers per type; empty draft can't post;
+9. Expenses — `ExpenseController` CRUD, `config/expenses.php` categories,
+   `views/expenses/`. No engine, no allocations.
+10. The seven reports.
+11. Pest tests: post assigns sequential numbers per type; empty draft can't post;
     allocation can't exceed balance; wrong-direction allocation is rejected;
     payment flips status to partial then settled; voiding an allocated doc fails.
 
@@ -215,7 +250,8 @@ Behaviour:
    appointments (clinic) / low stock count (clothing).
 6. Two `.env` presets to flip `ACTIVE_MODULES` live.
 
-**Stretch, only if ahead:** gross profit report (sales revenue − stock movement cost).
+**Stretch, only if ahead:** per-line `cost_price` snapshot on `document_lines` so
+the gross-margin report's COGS is exact instead of using the item's current cost.
 
 ---
 

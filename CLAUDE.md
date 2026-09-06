@@ -2,12 +2,17 @@
 
 ## What this is
 A modular accounting ERP demo. Laravel + PostgreSQL + Blade. A shared **core**
-(parties, items, sales & purchase documents, payments, reports) plus
-**per-industry modules** that plug into it (clothing retail, doctor clinic).
+(parties, items, sales & purchase documents, payments, expenses, reports, a login
+gate and an audit log) plus **per-industry modules** that plug into it (clothing
+retail, doctor clinic).
 
 This is a demo of software craftsmanship. Optimize for clean seams, readable
 code, and working screens. Do NOT add multi-tenancy, queues, caching, API
 layers, or a general ledger.
+
+Expenses, the VAT-return report and the gross-margin report exist **without a GL**
+— margin COGS uses the item's current `cost_price` and the report says so. A true
+P&L / balance sheet / trial balance stays out.
 
 ## Non-negotiables
 - PHP 8.3+, Laravel 12, PostgreSQL 16, Blade + Tailwind. No Livewire, no Inertia, no Vue.
