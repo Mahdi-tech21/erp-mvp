@@ -268,7 +268,11 @@ Behaviour:
    void that would go negative is blocked, appointment produces a correct draft.
 5. Dashboard tiles: receivables total, payables total, open documents, today's
    appointments (clinic) / low stock count (clothing).
-6. Two `.env` presets to flip `ACTIVE_MODULES` live.
+6. `.env` presets to flip `ACTIVE_MODULES` live. `.env.clinic` done
+   (`cp .env.clinic .env && php artisan config:clear`) — sets `APP_NAME`,
+   `ACTIVE_MODULES=clinic`. The seeder is industry-aware: company name, demo
+   users (`reception@erp.test` / `shopfloor@erp.test`), and module demo data
+   follow the active module. `.env.clothing` lands with step 2.
 
 **Stretch, only if ahead:** per-line `cost_price` snapshot on `document_lines` so
 the gross-margin report's COGS is exact instead of using the item's current cost.

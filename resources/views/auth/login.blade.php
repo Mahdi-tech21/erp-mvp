@@ -23,4 +23,14 @@
 
         <x-btn class="w-full">Sign in</x-btn>
     </form>
+
+    @if (config('app.debug'))
+        @php $modules = app(\App\Support\ModuleRegistry::class); @endphp
+        <p class="mt-4 text-center text-xs text-gray-400">
+            Demo &mdash; <span class="font-mono">admin@erp.test</span>
+            @if ($modules->isActive('clinic')) &middot; <span class="font-mono">reception@erp.test</span> @endif
+            @if ($modules->isActive('clothing')) &middot; <span class="font-mono">shopfloor@erp.test</span> @endif
+            &middot; password <span class="font-mono">password</span>
+        </p>
+    @endif
 </x-auth-layout>

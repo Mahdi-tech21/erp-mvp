@@ -11,13 +11,33 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $registry = app(ModuleRegistry::class);
+
         User::query()->firstOrCreate(
             ['email' => 'admin@erp.test'],
-            ['name' => 'Admin', 'password' => 'password'],
+            ['name' => 'Owner', 'password' => 'password'],
         );
 
+        if ($registry->isActive('clinic')) {
+            User::query()->firstOrCreate(
+                ['email' => 'reception@erp.test'],
+                ['name' => 'Clinic Reception', 'password' => 'password'],
+            );
+        }
+
+        if ($registry->isActive('clothing')) {
+            User::query()->firstOrCreate(
+                ['email' => 'shopfloor@erp.test'],
+                ['name' => 'Shop Floor', 'password' => 'password'],
+            );
+        }
+
         CompanySetting::query()->firstOrCreate([], [
-            'name' => 'Demo Trading Co.',
+            'name' => match (true) {
+                $registry->isActive('clinic') => 'Brookside Family Clinic',
+                $registry->isActive('clothing') => 'Northgate Clothing Co.',
+                default => 'Demo Trading Co.',
+            },
             'address' => "12 Market Street\nCity Centre",
             'phone' => '+1 555 0100',
             'currency' => 'USD',
@@ -28,7 +48,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call(DemoDataSeeder::class);
 
-        foreach (app(ModuleRegistry::class)->seeders() as $seeder) {
+        foreach ($registry->seeders() as $seeder) {
             $this->call($seeder);
         }
     }
