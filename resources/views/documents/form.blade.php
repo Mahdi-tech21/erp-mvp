@@ -7,6 +7,7 @@
         $rows = array_values(old('lines'));
     } elseif ($isEdit && $document->lines->isNotEmpty()) {
         $rows = $document->lines->map(fn ($l) => [
+            'id' => $l->id,
             'item_id' => $l->item_id,
             'description' => $l->description,
             'qty' => rtrim(rtrim((string) $l->qty, '0'), '.'),
@@ -62,6 +63,9 @@
                         <th class="px-3 py-2.5">Description</th>
                         <th class="w-24 px-3 py-2.5 text-right">Qty</th>
                         <th class="w-32 px-3 py-2.5 text-right">Unit price</th>
+                        @foreach ($lineFields as $field)
+                            <th class="w-48 px-3 py-2.5">{{ $field['header'] }}</th>
+                        @endforeach
                         <th class="w-32 px-3 py-2.5 text-right">Line total</th>
                         <th class="w-10 px-3 py-2.5"></th>
                     </tr>
@@ -81,6 +85,9 @@
                             <td class="px-3 py-2"><input type="text" name="lines[{{ $i }}][description]" value="{{ $row['description'] ?? '' }}" class="{{ $lineInput }} line-desc"></td>
                             <td class="px-3 py-2"><input type="number" step="0.001" min="0" name="lines[{{ $i }}][qty]" value="{{ $row['qty'] ?? 1 }}" class="{{ $lineInput }} text-right line-qty"></td>
                             <td class="px-3 py-2"><input type="number" step="0.01" min="0" name="lines[{{ $i }}][unit_price]" value="{{ $row['unit_price'] ?? 0 }}" class="{{ $lineInput }} text-right line-price"></td>
+                            @foreach ($lineFields as $field)
+                                <td class="px-3 py-2">@include($field['partial'], ['i' => $i, 'row' => $row])</td>
+                            @endforeach
                             <td class="px-3 py-2 text-right tabular-nums text-gray-700 line-total">0.00</td>
                             <td class="px-3 py-2 text-center"><button type="button" class="remove-line text-gray-400 hover:text-red-600">&times;</button></td>
                         </tr>
@@ -137,6 +144,9 @@
             <td class="px-3 py-2"><input type="text" name="lines[__IDX__][description]" class="{{ $lineInput }} line-desc"></td>
             <td class="px-3 py-2"><input type="number" step="0.001" min="0" name="lines[__IDX__][qty]" value="1" class="{{ $lineInput }} text-right line-qty"></td>
             <td class="px-3 py-2"><input type="number" step="0.01" min="0" name="lines[__IDX__][unit_price]" value="0" class="{{ $lineInput }} text-right line-price"></td>
+            @foreach ($lineFields as $field)
+                <td class="px-3 py-2">@include($field['partial'], ['i' => '__IDX__', 'row' => []])</td>
+            @endforeach
             <td class="px-3 py-2 text-right tabular-nums text-gray-700 line-total">0.00</td>
             <td class="px-3 py-2 text-center"><button type="button" class="remove-line text-gray-400 hover:text-red-600">&times;</button></td>
         </tr>

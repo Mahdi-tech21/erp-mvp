@@ -9,6 +9,7 @@ use App\Models\Document;
 use App\Models\Item;
 use App\Models\Party;
 use App\Services\DocumentService;
+use App\Support\ModuleRegistry;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,10 @@ abstract class BaseDocumentController extends Controller
     /** 'sales_invoice' or 'purchase_invoice'. */
     abstract protected function docType(): string;
 
-    public function __construct(protected DocumentService $documents) {}
+    public function __construct(
+        protected DocumentService $documents,
+        protected ModuleRegistry $modules,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -71,14 +75,16 @@ abstract class BaseDocumentController extends Controller
             return back()->withInput()->with('error', $error);
         }
 
+        $lines = $request->input('lines', []);
+
         try {
-            $document = DB::transaction(function () use ($data) {
+            $document = DB::transaction(function () use ($data, $lines) {
                 $document = Document::create(array_merge(
                     ['doc_type' => $this->docType(), 'status' => 'draft'],
                     $this->headerData($data),
                 ));
 
-                $this->syncLines($document, $data['lines']);
+                $this->syncLines($document, $lines);
                 $this->documents->recalculateTotals($document);
 
                 return $document;
@@ -127,11 +133,13 @@ abstract class BaseDocumentController extends Controller
             return back()->withInput()->with('error', $error);
         }
 
+        $lines = $request->input('lines', []);
+
         try {
-            DB::transaction(function () use ($data, $document) {
+            DB::transaction(function () use ($data, $lines, $document) {
                 $document->update($this->headerData($data));
 
-                $this->syncLines($document, $data['lines']);
+                $this->syncLines($document, $lines);
                 $this->documents->recalculateTotals($document->load('lines'));
             });
         } catch (DomainException $e) {
@@ -237,6 +245,7 @@ abstract class BaseDocumentController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name', 'sku', 'unit_price']),
             'taxRate' => (float) CompanySetting::current()->tax_rate,
+            'lineFields' => $this->modules->lineFields(),
         ]);
     }
 
@@ -248,7 +257,7 @@ abstract class BaseDocumentController extends Controller
     }
 
     /**
-     * @param  list<array<string, mixed>>  $lines
+     * @param  list<array<string, mixed>>  $lines  raw line input (may carry module fields)
      */
     private function syncLines(Document $document, array $lines): void
     {
@@ -258,7 +267,7 @@ abstract class BaseDocumentController extends Controller
             $qty = round((float) $line['qty'], 3);
             $price = round((float) $line['unit_price'], 2);
 
-            $document->lines()->create([
+            $created = $document->lines()->create([
                 'item_id' => $line['item_id'] ?? null,
                 'description' => $line['description'],
                 'qty' => $qty,
@@ -266,6 +275,9 @@ abstract class BaseDocumentController extends Controller
                 'line_total' => round($qty * $price, 2),
                 'sort_order' => $i,
             ]);
+
+            // Seam #2: let active modules persist their own per-line data.
+            $this->modules->persistLineFields($created, $line);
         }
 
         $document->load('lines');

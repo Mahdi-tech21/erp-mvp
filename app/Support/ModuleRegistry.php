@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\CompanySetting;
+use App\Models\DocumentLine;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use RuntimeException;
@@ -27,6 +28,15 @@ class ModuleRegistry
 
     /** @var list<class-string> */
     protected array $seeders = [];
+
+    /** @var list<array{partial: string, header: string}> */
+    protected array $lineFields = [];
+
+    /** @var list<callable> */
+    protected array $lineHandlers = [];
+
+    /** @var list<callable> */
+    protected array $lineDisplays = [];
 
     public function __construct(protected Application $app)
     {
@@ -135,6 +145,55 @@ class ModuleRegistry
     public function seeders(): array
     {
         return $this->seeders;
+    }
+
+    /**
+     * Seam #2: a module renders an extra input inside every core document
+     * line ($partial, a Blade view given $i and $row) under its own column
+     * ($header), persists that input to its own table ($handler, given the
+     * saved DocumentLine and the line's raw request array), and optionally
+     * contributes a read-only label for the show/print views ($display).
+     */
+    public function addLineField(string $partial, string $header, callable $handler, ?callable $display = null): void
+    {
+        $this->lineFields[] = compact('partial', 'header');
+        $this->lineHandlers[] = $handler;
+
+        if ($display !== null) {
+            $this->lineDisplays[] = $display;
+        }
+    }
+
+    /** @return list<array{partial: string, header: string}> */
+    public function lineFields(): array
+    {
+        return $this->lineFields;
+    }
+
+    /**
+     * @param  DocumentLine  $line
+     * @param  array<string, mixed>  $input
+     */
+    public function persistLineFields($line, array $input): void
+    {
+        foreach ($this->lineHandlers as $handler) {
+            $handler($line, $input);
+        }
+    }
+
+    /**
+     * Module-contributed read-only labels for one document line (e.g. "Red / M").
+     *
+     * @param  DocumentLine  $line
+     * @return list<string>
+     */
+    public function lineLabels($line): array
+    {
+        return collect($this->lineDisplays)
+            ->map(fn ($display) => $display($line))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     /**

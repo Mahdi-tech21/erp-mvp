@@ -262,10 +262,16 @@ Behaviour:
    registers menu items + a demo seeder via `ModuleRegistry` (`addMenuItem`,
    `addSeeder`). `ACTIVE_MODULES` set for tests in `phpunit.xml`.
 2. **Clothing**: provider, migrations, variants, stock screens, line partial,
-   stock listeners, seeder.
+   stock listeners, seeder. **Done.** Seam #2 wired: `ModuleRegistry::addLineField`
+   (partial + header + persist handler + optional display label); core doc form
+   renders module partials as an extra column, `syncLines` calls the handler per
+   line with the raw input, `documents/show` renders the display labels. Stock
+   moves in `MoveStockOnPost` / `ReverseStockOnVoid` listeners
+   (`Event::listen` in the provider) - the void listener throws to veto.
 3. Clothing reports: stock on hand, low stock.
 4. Tests: purchase posting raises stock, sale lowers it, void restores it,
    void that would go negative is blocked, appointment produces a correct draft.
+   **Done** for clinic (step 1) and clothing (this step).
 5. Dashboard tiles: receivables total, payables total, open documents, today's
    appointments (clinic) / low stock count (clothing).
 6. `.env` presets to flip `ACTIVE_MODULES` live. `.env.clinic` done

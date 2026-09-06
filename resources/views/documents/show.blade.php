@@ -59,12 +59,16 @@
                 <x-th right>Unit price</x-th>
                 <x-th right>Line total</x-th>
             </x-slot:head>
+            @php $modules = app(\App\Support\ModuleRegistry::class); @endphp
             <tbody class="divide-y divide-gray-100">
                 @foreach ($document->lines as $line)
                     <tr>
                         <x-td>
                             {{ $line->description }}
                             @if ($line->item)<span class="ml-1 text-xs text-gray-400">{{ $line->item->sku }}</span>@endif
+                            @foreach ($modules->lineLabels($line) as $label)
+                                <span class="ml-1 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">{{ $label }}</span>
+                            @endforeach
                         </x-td>
                         <x-td num>{{ rtrim(rtrim(number_format($line->qty, 3), '0'), '.') }}</x-td>
                         <x-td num>{{ number_format($line->unit_price, 2) }}</x-td>
