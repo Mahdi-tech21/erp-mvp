@@ -37,6 +37,7 @@ class StoreDocumentRequest extends FormRequest
             'doc_date' => ['required', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:doc_date'],
             'discount' => ['nullable', 'numeric', 'min:0'],
+            'external_ref' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
 
             'lines' => ['required', 'array', 'min:1'],

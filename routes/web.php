@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentActionController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\PurchaseInvoiceController;
 use App\Http\Controllers\SalesInvoiceController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
@@ -33,19 +34,18 @@ Route::middleware('auth')->group(function () {
     Route::resource('items', ItemController::class)->except('show');
 
     /*
-    | Sales invoices. Purchase invoices (step 7) register the same shape with
-    | the PurchaseInvoiceController and the {document} parameter.
+    | Sales invoices and purchase invoices are the same set of routes with the
+    | words swapped - one shape, two named children of BaseDocumentController.
     */
-    Route::resource('sales-invoices', SalesInvoiceController::class)
-        ->parameters(['sales-invoices' => 'document']);
+    $documentRoutes = function (string $prefix, string $controller) {
+        Route::resource($prefix, $controller)->parameters([$prefix => 'document']);
+        Route::post("{$prefix}/{document}/post", [DocumentActionController::class, 'post'])->name("{$prefix}.post");
+        Route::post("{$prefix}/{document}/void", [DocumentActionController::class, 'void'])->name("{$prefix}.void");
+        Route::get("{$prefix}/{document}/print", [$controller, 'print'])->name("{$prefix}.print");
+    };
 
-    Route::controller(DocumentActionController::class)->group(function () {
-        Route::post('sales-invoices/{document}/post', 'post')->name('sales-invoices.post');
-        Route::post('sales-invoices/{document}/void', 'void')->name('sales-invoices.void');
-    });
-
-    Route::get('sales-invoices/{document}/print', [SalesInvoiceController::class, 'print'])
-        ->name('sales-invoices.print');
+    $documentRoutes('sales-invoices', SalesInvoiceController::class);
+    $documentRoutes('purchase-invoices', PurchaseInvoiceController::class);
 
     Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
 });

@@ -73,15 +73,10 @@ abstract class BaseDocumentController extends Controller
 
         try {
             $document = DB::transaction(function () use ($data) {
-                $document = Document::create([
-                    'doc_type' => $this->docType(),
-                    'party_id' => $data['party_id'],
-                    'doc_date' => $data['doc_date'],
-                    'due_date' => $data['due_date'] ?? null,
-                    'discount' => round((float) ($data['discount'] ?? 0), 2),
-                    'notes' => $data['notes'] ?? null,
-                    'status' => 'draft',
-                ]);
+                $document = Document::create(array_merge(
+                    ['doc_type' => $this->docType(), 'status' => 'draft'],
+                    $this->headerData($data),
+                ));
 
                 $this->syncLines($document, $data['lines']);
                 $this->documents->recalculateTotals($document);
@@ -134,13 +129,7 @@ abstract class BaseDocumentController extends Controller
 
         try {
             DB::transaction(function () use ($data, $document) {
-                $document->update([
-                    'party_id' => $data['party_id'],
-                    'doc_date' => $data['doc_date'],
-                    'due_date' => $data['due_date'] ?? null,
-                    'discount' => round((float) ($data['discount'] ?? 0), 2),
-                    'notes' => $data['notes'] ?? null,
-                ]);
+                $document->update($this->headerData($data));
 
                 $this->syncLines($document, $data['lines']);
                 $this->documents->recalculateTotals($document->load('lines'));
@@ -191,6 +180,35 @@ abstract class BaseDocumentController extends Controller
     protected function config(string $key): string
     {
         return config("documents.types.{$this->docType()}.{$key}");
+    }
+
+    protected function supportsExternalRef(): bool
+    {
+        return (bool) config("documents.types.{$this->docType()}.has_external_ref");
+    }
+
+    /**
+     * Header fields shared by store and update. external_ref only for the
+     * document types that declare it (purchase invoices).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function headerData(array $data): array
+    {
+        $header = [
+            'party_id' => $data['party_id'],
+            'doc_date' => $data['doc_date'],
+            'due_date' => $data['due_date'] ?? null,
+            'discount' => round((float) ($data['discount'] ?? 0), 2),
+            'notes' => $data['notes'] ?? null,
+        ];
+
+        if ($this->supportsExternalRef()) {
+            $header['external_ref'] = $data['external_ref'] ?? null;
+        }
+
+        return $header;
     }
 
     /**

@@ -55,6 +55,12 @@
                 <label class="text-sm font-medium text-gray-700">Due date</label>
                 <input type="date" name="due_date" value="{{ old('due_date', optional($document->due_date)->format('Y-m-d')) }}" class="{{ $inputClass }}">
             </div>
+            @if ($type['has_external_ref'])
+                <div class="col-span-2">
+                    <label class="text-sm font-medium text-gray-700">{{ $type['party_singular'] }}'s invoice number</label>
+                    <input type="text" name="external_ref" value="{{ old('external_ref', $document->external_ref) }}" class="{{ $inputClass }}">
+                </div>
+            @endif
         </div>
 
         <div class="rounded-lg border border-gray-200 bg-white">

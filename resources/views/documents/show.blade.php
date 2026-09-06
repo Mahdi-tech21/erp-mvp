@@ -50,6 +50,12 @@
                 <div class="text-xs uppercase tracking-wide text-gray-400">Due</div>
                 {{ optional($document->due_date)->format('Y-m-d') ?? '—' }}
             </div>
+            @if ($type['has_external_ref'] && $document->external_ref)
+                <div>
+                    <div class="text-xs uppercase tracking-wide text-gray-400">{{ $type['party_singular'] }}'s invoice no.</div>
+                    {{ $document->external_ref }}
+                </div>
+            @endif
         </div>
 
         <div class="overflow-hidden rounded-lg border border-gray-200 bg-white">

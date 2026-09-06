@@ -35,6 +35,9 @@
             <h1>{{ $type['doc_singular'] }}</h1>
             <div>{{ $document->number ?? 'DRAFT' }}</div>
             <div class="muted">{{ $document->doc_date->format('Y-m-d') }}</div>
+            @if ($type['has_external_ref'] && $document->external_ref)
+                <div class="muted">Ref: {{ $document->external_ref }}</div>
+            @endif
         </div>
     </div>
 
