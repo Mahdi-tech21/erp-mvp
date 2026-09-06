@@ -14,6 +14,12 @@ Expenses, the VAT-return report and the gross-margin report exist **without a GL
 — margin COGS uses the item's current `cost_price` and the report says so. A true
 P&L / balance sheet / trial balance stays out.
 
+A floating **help assistant** ("Ask AI") explains how the system works. Swappable
+driver in `config/assistant.php`: `canned` (offline keyword match over
+`resources/assistant/topics.php`, no cost — the default) or `claude` (Anthropic
+SDK, dormant until `composer require anthropic-ai/sdk` + `ASSISTANT_API_KEY`).
+`AssistantController` streams the reply — no queue.
+
 ## Non-negotiables
 - PHP 8.3+, Laravel 12, PostgreSQL 16, Blade + Tailwind. No Livewire, no Inertia, no Vue.
 - No module package (`nwidart` etc). Modules are hand-rolled — the architecture

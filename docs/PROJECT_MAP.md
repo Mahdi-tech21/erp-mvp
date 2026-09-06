@@ -213,6 +213,7 @@ Order is driven by foreign keys: you can't create `documents` before `parties`.
 | 9 | `..._create_payment_allocations_table` | `payment_allocations` | Which payment settles which invoice |
 | 10 | `..._create_audit_logs_table` | `audit_logs` | Append-only action log (step 6b) |
 | 11 | `..._create_expenses_table` | `expenses` | Non-invoice spend (step 9) |
+| 11b | `..._create_assistant_tables` | `assistant_conversations`, `assistant_messages` | Help-assistant chat history (step 6d) |
 
 ### Clothing — `app/Modules/Clothing/database/migrations/`
 

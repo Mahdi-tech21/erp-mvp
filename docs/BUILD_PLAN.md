@@ -108,6 +108,18 @@ summary varchar, properties jsonb nullable, created_at
 Append-only (no `updated_at`). Written by `AuditLogSubscriber` on `DocumentPosted`
 / `DocumentVoided` / `PaymentRecorded`, inside the service transaction.
 
+### assistant_conversations / assistant_messages
+```
+assistant_conversations: id, user_id FK cascade, timestamps
+assistant_messages: id, assistant_conversation_id FK cascade,
+                    role ENUM('user','assistant'), content text, timestamps
+```
+Backs the in-app help assistant (a floating "Ask AI" widget). Swappable
+driver via `config/assistant.php`: `canned` (matches `resources/assistant/
+topics.php`, no API, no cost - the default) or `claude` (Anthropic SDK,
+dormant until installed + keyed). `AssistantController` streams the reply;
+no queue.
+
 ---
 
 ## Document engine (the part worth showing)
@@ -228,6 +240,10 @@ Behaviour:
    create with dynamic line rows, edit draft, post, void, print view.
    - 6a. Login gate — hand-rolled session auth, all routes behind `auth`.
    - 6b. Audit log — `AuditLogSubscriber` on the three events, `/audit` screen.
+   - 6c. UI refactor — anonymous Blade component system, indigo theme,
+     printable reports. Every screen on `<x-app-layout>`.
+   - 6d. Help assistant — floating "Ask AI" widget, swappable driver
+     (`canned` by default = free/offline; `claude` optional).
 7. Purchase invoices: `PurchaseInvoiceController` (~6 lines, everything inherited)
    plus the `external_ref` field.
 8. Payments in and out, with allocation to open documents.

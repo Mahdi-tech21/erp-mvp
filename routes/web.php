@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
@@ -77,4 +78,11 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
+
+    Route::prefix('assistant')->name('assistant.')->group(function () {
+        Route::get('history', [AssistantController::class, 'history'])->name('history');
+        Route::post('message', [AssistantController::class, 'message'])
+            ->middleware('throttle:20,1')
+            ->name('message');
+    });
 });
