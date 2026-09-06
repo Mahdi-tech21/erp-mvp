@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
@@ -45,4 +46,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('sales-invoices/{document}/print', [SalesInvoiceController::class, 'print'])
         ->name('sales-invoices.print');
+
+    Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
 });

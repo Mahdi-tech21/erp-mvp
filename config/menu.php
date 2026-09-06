@@ -61,6 +61,13 @@ return [
             ],
         ],
 
+        [
+            'label' => 'System',
+            'items' => [
+                ['label' => 'Audit log', 'route' => 'audit.index'],
+            ],
+        ],
+
     ],
 
 ];
