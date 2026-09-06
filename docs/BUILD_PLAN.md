@@ -274,11 +274,13 @@ Behaviour:
    **Done** for clinic (step 1) and clothing (this step).
 5. Dashboard tiles: receivables total, payables total, open documents, today's
    appointments (clinic) / low stock count (clothing).
-6. `.env` presets to flip `ACTIVE_MODULES` live. `.env.clinic` done
-   (`cp .env.clinic .env && php artisan config:clear`) — sets `APP_NAME`,
-   `ACTIVE_MODULES=clinic`. The seeder is industry-aware: company name, demo
-   users (`reception@erp.test` / `shopfloor@erp.test`), and module demo data
-   follow the active module. `.env.clothing` lands with step 2.
+6. `.env` presets to flip `ACTIVE_MODULES` live. **Done.** Three tracked presets —
+   `.env.base` (`ACTIVE_MODULES=`, core only), `.env.clinic`, `.env.clothing` —
+   each carries its own `APP_NAME` and a baked `APP_KEY`. Switch with
+   `cp .env.<x> .env && php artisan config:clear`. The seeder is industry-aware:
+   company name, demo users (`reception@erp.test` / `shopfloor@erp.test`), and
+   module demo data follow the active module. Verified: base → 0 module routes,
+   clinic → 14, clothing → 8.
 
 **Stretch, only if ahead:** per-line `cost_price` snapshot on `document_lines` so
 the gross-margin report's COGS is exact instead of using the item's current cost.

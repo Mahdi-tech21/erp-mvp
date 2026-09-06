@@ -11,8 +11,9 @@ An outside look before you start: where everything lives, and every table you'll
 ```
 erp-mvp/
 ├── CLAUDE.md                                  ★ project rules, Claude Code reads this automatically
-├── .env                                       ★ ACTIVE_MODULES=clothing
+├── .env                                       ★ the live config (git-ignored)
 ├── .env.testing                               ★ separate test database
+├── .env.base / .env.clinic / .env.clothing    ★ deployment presets: cp .env.<x> .env && php artisan config:clear
 ├── docs/
 │   └── BUILD_PLAN.md                          ★ the two-night plan
 │
@@ -179,7 +180,7 @@ erp-mvp/
 | 3 | Stock reports | `StockReportController` + `clothing::reports` |
 | 4 | Module tests | `tests/Feature/Clothing/`, `tests/Feature/Clinic/` |
 | 5 | Dashboard | `DashboardController` + tiles contributed by modules |
-| 6 | Live module switch | `.env` → `ACTIVE_MODULES` |
+| 6 | Live module switch | `.env.base` / `.env.clinic` / `.env.clothing` presets |
 
 **On the controller pairs:** `parties` and `documents` are each one table with one
 set of rules, but they get two named controllers apiece so the routes, the menu,
