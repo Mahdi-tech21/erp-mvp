@@ -2,6 +2,7 @@
 
 use App\Models\Document;
 use App\Models\DocumentLine;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,6 +17,15 @@ pest()->extend(TestCase::class)->in('Unit');
 | Helpers
 |--------------------------------------------------------------------------
 */
+
+/**
+ * Authenticate the current test as a freshly-made user. Every app route is
+ * behind the `auth` middleware.
+ */
+function asAdmin(): TestCase
+{
+    return test()->actingAs(User::factory()->create());
+}
 
 /**
  * Build a draft document with lines, ready to hand to DocumentService::post().

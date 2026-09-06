@@ -49,6 +49,16 @@
                 No company settings
             @endif
         </div>
+
+        @auth
+            <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 text-sm">
+                <span class="truncate text-gray-600">{{ auth()->user()->name }}</span>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button class="text-gray-400 hover:text-gray-700">Sign out</button>
+                </form>
+            </div>
+        @endauth
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">

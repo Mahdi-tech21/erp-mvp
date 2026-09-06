@@ -4,6 +4,8 @@ use App\Models\Document;
 use App\Models\DocumentLine;
 use App\Models\Item;
 
+beforeEach(fn () => asAdmin());
+
 it('lists and searches items case-insensitively', function () {
     Item::factory()->create(['name' => 'Cotton Shirt', 'sku' => 'SHIRT-01']);
     Item::factory()->create(['name' => 'Leather Belt', 'sku' => 'BELT-01']);

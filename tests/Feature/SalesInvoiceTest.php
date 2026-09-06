@@ -7,6 +7,7 @@ use App\Models\Party;
 use App\Services\PaymentService;
 
 beforeEach(function () {
+    asAdmin();
     CompanySetting::factory()->create(['tax_rate' => 11.00, 'sales_prefix' => 'INV']);
 });
 

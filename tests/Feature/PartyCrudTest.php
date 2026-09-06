@@ -3,6 +3,8 @@
 use App\Models\Document;
 use App\Models\Party;
 
+beforeEach(fn () => asAdmin());
+
 it('lists only parties of the screen role', function () {
     $customer = Party::factory()->customer()->create(['name' => 'Only Customer']);
     $supplier = Party::factory()->supplier()->create(['name' => 'Only Supplier']);

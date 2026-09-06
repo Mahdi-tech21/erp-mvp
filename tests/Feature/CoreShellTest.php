@@ -1,5 +1,7 @@
 <?php
 
+beforeEach(fn () => asAdmin());
+
 it('redirects the root url to the dashboard', function () {
     $this->get('/')->assertRedirect('/dashboard');
 });
@@ -7,7 +9,7 @@ it('redirects the root url to the dashboard', function () {
 it('renders the dashboard with the sidebar', function () {
     $this->get('/dashboard')
         ->assertOk()
-        ->assertSee('Dashboard')
+        ->assertSee('Customers')
         ->assertSee('Welcome');
 });
 
