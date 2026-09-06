@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentActionController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseInvoiceController;
@@ -33,6 +34,8 @@ Route::middleware('auth')->group(function () {
         ->except('show');
 
     Route::resource('items', ItemController::class)->except('show');
+
+    Route::resource('expenses', ExpenseController::class)->except('show');
 
     /*
     | Sales invoices and purchase invoices are the same set of routes with the

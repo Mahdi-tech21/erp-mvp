@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Document;
+use App\Models\Expense;
 use App\Models\Item;
 use App\Models\Party;
 use App\Services\DocumentService;
@@ -38,6 +39,12 @@ class DemoDataSeeder extends Seeder
 
         $this->seedDocuments('sales_invoice', $customers, $items, count: 18, drafts: 3, voids: 2);
         $this->seedDocuments('purchase_invoice', $suppliers, $items->where('type', 'product'), count: 10, drafts: 2, voids: 1);
+
+        foreach (range(1, 20) as $ignored) {
+            Expense::factory()->create([
+                'supplier_id' => fake()->boolean(30) ? $suppliers->random()->id : null,
+            ]);
+        }
     }
 
     /**

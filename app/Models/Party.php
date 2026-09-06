@@ -42,4 +42,9 @@ class Party extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class, 'supplier_id');
+    }
 }

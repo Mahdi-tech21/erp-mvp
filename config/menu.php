@@ -51,6 +51,7 @@ return [
             'label' => 'Money',
             'items' => [
                 ['label' => 'Payments', 'route' => 'payments.index'],
+                ['label' => 'Expenses', 'route' => 'expenses.index'],
             ],
         ],
 

@@ -79,8 +79,8 @@ abstract class BasePartyController extends Controller
     {
         abort_unless($party->{$this->flag()}, 404);
 
-        if ($party->documents()->exists() || $party->payments()->exists()) {
-            return back()->with('error', $this->config('singular').' "'.$party->name.'" has documents or payments and cannot be deleted.');
+        if ($party->documents()->exists() || $party->payments()->exists() || $party->expenses()->exists()) {
+            return back()->with('error', $this->config('singular').' "'.$party->name.'" is referenced by documents, payments or expenses and cannot be deleted.');
         }
 
         $party->delete();
