@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentActionController;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseInvoiceController;
 use App\Http\Controllers\SalesInvoiceController;
 use App\Http\Controllers\SupplierController;
@@ -46,6 +47,19 @@ Route::middleware('auth')->group(function () {
 
     $documentRoutes('sales-invoices', SalesInvoiceController::class);
     $documentRoutes('purchase-invoices', PurchaseInvoiceController::class);
+
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('/', [PaymentController::class, 'index'])->name('index');
+
+        foreach (['in', 'out'] as $direction) {
+            Route::get("{$direction}/new", [PaymentController::class, 'create'])
+                ->defaults('direction', $direction)->name("{$direction}.create");
+            Route::post($direction, [PaymentController::class, 'store'])
+                ->defaults('direction', $direction)->name("{$direction}.store");
+        }
+
+        Route::get('{payment}', [PaymentController::class, 'show'])->name('show')->whereNumber('payment');
+    });
 
     Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
 });
