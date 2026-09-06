@@ -41,7 +41,9 @@ class MoveStockOnPost
                 'item_variant_id' => $variant->id,
                 'direction' => $direction,
                 'qty' => $qty,
-                'unit_cost' => $line->unit_price,
+                // Cost only makes sense on the way in; an 'out' line carries the
+                // sale price, not a cost.
+                'unit_cost' => $direction === 'in' ? $line->unit_price : null,
                 'reference_type' => 'document',
                 'reference_id' => $document->id,
                 'moved_at' => now(),

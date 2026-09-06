@@ -50,7 +50,7 @@ class ReverseStockOnVoid
                 'item_variant_id' => $variant->id,
                 'direction' => $reverseDirection,
                 'qty' => $qty,
-                'unit_cost' => $line->unit_price,
+                'unit_cost' => null, // a correction, not a real purchase
                 'reference_type' => 'void',
                 'reference_id' => $document->id,
                 'moved_at' => now(),

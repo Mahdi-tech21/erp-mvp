@@ -15,6 +15,7 @@ class StockReportController extends Controller
             ->with('item:id,name,cost_price')
             ->addSelect(['last_cost' => StockMovement::select('unit_cost')
                 ->whereColumn('item_variant_id', 'item_variants.id')
+                ->where('direction', 'in')
                 ->whereNotNull('unit_cost')
                 ->orderByDesc('moved_at')
                 ->orderByDesc('id')
