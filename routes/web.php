@@ -9,6 +9,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PurchaseInvoiceController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SalesInvoiceController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +63,17 @@ Route::middleware('auth')->group(function () {
         }
 
         Route::get('{payment}', [PaymentController::class, 'show'])->name('show')->whereNumber('payment');
+    });
+
+    Route::prefix('reports')->name('reports.')->controller(ReportController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('sales', 'sales')->name('sales');
+        Route::get('purchases', 'purchases')->name('purchases');
+        Route::get('ar-aging', 'arAging')->name('ar-aging');
+        Route::get('ap-aging', 'apAging')->name('ap-aging');
+        Route::get('statement', 'statement')->name('statement');
+        Route::get('vat-return', 'vatReturn')->name('vat-return');
+        Route::get('margin', 'margin')->name('margin');
     });
 
     Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');

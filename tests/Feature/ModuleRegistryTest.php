@@ -21,14 +21,20 @@ it('fails loudly when an active module has no provider', function () {
         ->toThrow(RuntimeException::class, 'Module [ghost]');
 });
 
-it('hides menu entries whose route does not exist yet', function () {
-    $menu = app(ModuleRegistry::class)->menu();
+it('drops a menu entry whose route does not exist', function () {
+    config()->set('menu.sections', [
+        ['label' => null, 'items' => [
+            ['label' => 'Real', 'route' => 'dashboard'],
+            ['label' => 'Ghost', 'route' => 'does.not.exist'],
+        ]],
+    ]);
 
-    $routes = collect($menu)->flatMap(fn ($section) => $section['items'])->pluck('route');
+    $routes = collect(app(ModuleRegistry::class)->menu())
+        ->flatMap(fn ($section) => $section['items'])
+        ->pluck('route');
 
     expect($routes)->toContain('dashboard')
-        ->and($routes)->toContain('customers.index')
-        ->and($routes)->not->toContain('reports.index');
+        ->and($routes)->not->toContain('does.not.exist');
 });
 
 it('lets a module add a sidebar entry only once its route exists', function () {
