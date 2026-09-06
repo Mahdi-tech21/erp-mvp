@@ -36,22 +36,9 @@ class DocumentService
         $this->assertPartyMatchesType($document);
 
         return DB::transaction(function () use ($document) {
-            $subtotal = $this->recomputeLines($document);
-            $discount = round((float) $document->discount, 2);
-
-            if ($discount > $subtotal) {
-                throw new DomainException('The discount cannot be more than the subtotal.');
-            }
-
-            $rate = (float) CompanySetting::current()->tax_rate;
-            $taxAmount = round(($subtotal - $discount) * $rate / 100, 2);
-            $total = round($subtotal - $discount + $taxAmount, 2);
+            $this->recalculateTotals($document);
 
             $document->forceFill([
-                'subtotal' => $subtotal,
-                'discount' => $discount,
-                'tax_amount' => $taxAmount,
-                'total' => $total,
                 'number' => $this->numbers->next($document->doc_type),
                 'status' => 'posted',
                 'posted_at' => now(),
@@ -61,6 +48,35 @@ class DocumentService
 
             return $document;
         });
+    }
+
+    /**
+     * Recompute a draft's line totals, subtotal, tax and total from its
+     * current lines and header discount. Used when a draft is saved and again
+     * inside post(). Does not touch status or number.
+     */
+    public function recalculateTotals(Document $document): Document
+    {
+        $document->loadMissing('lines');
+
+        $subtotal = $this->recomputeLines($document);
+        $discount = round((float) $document->discount, 2);
+
+        if ($discount > $subtotal) {
+            throw new DomainException('The discount cannot be more than the subtotal.');
+        }
+
+        $rate = (float) CompanySetting::current()->tax_rate;
+        $taxAmount = round(($subtotal - $discount) * $rate / 100, 2);
+
+        $document->forceFill([
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'tax_amount' => $taxAmount,
+            'total' => round($subtotal - $discount + $taxAmount, 2),
+        ])->save();
+
+        return $document;
     }
 
     /**
