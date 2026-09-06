@@ -46,7 +46,13 @@ class DatabaseSeeder extends Seeder
             'purchase_prefix' => 'BILL',
         ]);
 
-        $this->call(DemoDataSeeder::class);
+        if ($registry->active() === []) {
+            $this->call(DemoDataSeeder::class);
+        } else {
+            // A module is driving this deployment: it owns the customer base and
+            // the sales. The core still seeds shared vendors, bills and costs.
+            app(DemoDataSeeder::class)->seedBuySide();
+        }
 
         foreach ($registry->seeders() as $seeder) {
             $this->call($seeder);

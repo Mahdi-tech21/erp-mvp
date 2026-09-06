@@ -2,6 +2,7 @@
 
 use App\Models\CompanySetting;
 use App\Models\Document;
+use App\Models\Expense;
 use App\Models\Item;
 use App\Models\Party;
 use App\Models\Payment;
@@ -47,6 +48,11 @@ it('keeps settled_total equal to the sum of allocations', function () {
 it('runs the full database seeder including active modules without error', function () {
     $this->seed();
 
-    expect(Party::count())->toBeGreaterThan(15) // core 15 + clinic patients
-        ->and(Item::where('type', 'service')->count())->toBeGreaterThan(6);
+    // With modules active the core seeds only the buy side; the modules bring
+    // the customers (patients, shoppers) and the sales.
+    expect(Party::count())->toBeGreaterThan(15)
+        ->and(Document::where('doc_type', 'purchase_invoice')->exists())->toBeTrue()
+        ->and(Expense::exists())->toBeTrue()
+        ->and(Document::where('doc_type', 'sales_invoice')->where('status', '!=', 'draft')->exists())->toBeTrue()
+        ->and(Item::where('type', 'service')->exists())->toBeTrue();
 });

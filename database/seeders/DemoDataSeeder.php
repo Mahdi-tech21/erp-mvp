@@ -12,10 +12,18 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
 /**
- * Demo data: 15 parties, 30 items, then a spread of posted sales invoices
- * and bills — some settled, some part-paid, some open, a couple voided, a
- * few left as drafts. Everything goes through DocumentService / PaymentService
- * so numbering, totals and status are real.
+ * Demo data for the core: 15 parties, 30 items, then a spread of posted sales
+ * invoices and bills — some settled, some part-paid, some open, a couple
+ * voided, a few left as drafts. Everything goes through DocumentService /
+ * PaymentService so numbering, totals and status are real.
+ *
+ * Split in two halves so the composition root can pick:
+ *  - {@see seedBuySide()} — suppliers, their bills, and running costs. Every
+ *    deployment gets this; a clinic and a clothing shop both buy supplies and
+ *    pay rent.
+ *  - {@see seedSellSide()} — generic customers and the sales made to them. Only
+ *    for the plain core; when an industry module is active it owns the customer
+ *    base (patients, retail shoppers) and the sales that flow from it.
  */
 class DemoDataSeeder extends Seeder
 {
@@ -30,21 +38,53 @@ class DemoDataSeeder extends Seeder
             return;
         }
 
-        $both = Party::factory()->count(2)->both()->create();
-        $customers = Party::factory()->count(9)->customer()->create()->merge($both);
-        $suppliers = Party::factory()->count(4)->supplier()->create()->merge($both);
+        $shared = Party::factory()->count(2)->both()->create();
 
-        $items = Item::factory()->count(24)->product()->create()
-            ->merge(Item::factory()->count(6)->service()->create());
+        $this->seedBuySide($shared);
+        $this->seedSellSide($shared);
+    }
 
-        $this->seedDocuments('sales_invoice', $customers, $items, count: 18, drafts: 3, voids: 2);
-        $this->seedDocuments('purchase_invoice', $suppliers, $items->where('type', 'product'), count: 10, drafts: 2, voids: 1);
+    /**
+     * @param  Collection<int, Party>|null  $shared  parties that are also customers
+     */
+    public function seedBuySide(?Collection $shared = null): void
+    {
+        if (Expense::query()->exists()) {
+            return;
+        }
+
+        $suppliers = Party::factory()->count(4)->supplier()->create();
+
+        if ($shared !== null) {
+            $suppliers = $suppliers->merge($shared);
+        }
+
+        $items = Item::factory()->count(8)->product()->create();
+
+        $this->seedDocuments('purchase_invoice', $suppliers, $items, count: 10, drafts: 2, voids: 1);
 
         foreach (range(1, 20) as $ignored) {
             Expense::factory()->create([
                 'supplier_id' => fake()->boolean(30) ? $suppliers->random()->id : null,
             ]);
         }
+    }
+
+    /**
+     * @param  Collection<int, Party>|null  $shared  parties that are also suppliers
+     */
+    public function seedSellSide(?Collection $shared = null): void
+    {
+        $customers = Party::factory()->count(9)->customer()->create();
+
+        if ($shared !== null) {
+            $customers = $customers->merge($shared);
+        }
+
+        $items = Item::factory()->count(16)->product()->create()
+            ->merge(Item::factory()->count(6)->service()->create());
+
+        $this->seedDocuments('sales_invoice', $customers, $items, count: 18, drafts: 3, voids: 2);
     }
 
     /**

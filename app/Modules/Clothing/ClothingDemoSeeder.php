@@ -9,12 +9,23 @@ use App\Modules\Clothing\Models\DocumentLineVariant;
 use App\Modules\Clothing\Models\ItemVariant;
 use App\Modules\Clothing\Models\StockMovement;
 use App\Services\DocumentService;
+use App\Services\PaymentService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
+/**
+ * The clothing deployment's own sell side: a garment catalogue with size/colour
+ * variants, opening stock, restocking purchases and a run of retail sales — all
+ * posted through the core engine, so stock moves through the listeners and the
+ * A/R, A/P and stock reports have real data.
+ */
 class ClothingDemoSeeder extends Seeder
 {
-    public function __construct(private DocumentService $documents) {}
+    public function __construct(
+        private DocumentService $documents,
+        private PaymentService $payments,
+    ) {}
 
     public function run(): void
     {
@@ -22,6 +33,38 @@ class ClothingDemoSeeder extends Seeder
             return;
         }
 
+        $variants = $this->buildCatalogue();
+
+        $suppliers = collect(['Textile Wholesale Ltd', 'Northern Fabric Co.'])
+            ->map(fn ($name) => Party::factory()->supplier()->create(['name' => $name]));
+
+        $customers = collect(range(1, 8))
+            ->map(fn () => Party::factory()->customer()->create([
+                'name' => fake()->name(),
+                'email' => fake()->unique()->safeEmail(),
+            ]))
+            ->push(Party::factory()->customer()->create(['name' => 'High Street Boutique']));
+
+        // Restocking purchases first — stock in.
+        foreach (range(1, 4) as $ignored) {
+            $this->postWithVariants('purchase_invoice', $suppliers->random(), $variants->random(fake()->numberBetween(3, 6)), 'in');
+        }
+
+        // Retail sales — stock out, settled in various states.
+        foreach (range(1, 10) as $ignored) {
+            $document = $this->postWithVariants('sales_invoice', $customers->random(), $variants->random(fake()->numberBetween(1, 3)), 'out');
+
+            if ($document !== null) {
+                $this->maybePay($document);
+            }
+        }
+    }
+
+    /**
+     * @return Collection<int, ItemVariant>
+     */
+    private function buildCatalogue(): Collection
+    {
         $catalogue = [
             'Cotton T-Shirt' => 18,
             'Denim Jacket' => 75,
@@ -59,7 +102,7 @@ class ClothingDemoSeeder extends Seeder
                             'direction' => 'in',
                             'qty' => $opening,
                             'reference_type' => 'opening',
-                            'moved_at' => now()->subDays(30),
+                            'moved_at' => now()->subDays(45),
                             'note' => 'Opening stock',
                         ]);
                     }
@@ -69,32 +112,38 @@ class ClothingDemoSeeder extends Seeder
             }
         }
 
-        $supplier = Party::factory()->supplier()->create(['name' => 'Textile Wholesale Ltd']);
-        $customer = Party::factory()->customer()->create(['name' => 'High Street Boutique']);
-
-        // A purchase that moves stock in, and a sale that moves it out.
-        $this->postWithVariants('purchase_invoice', $supplier, $variants->random(4), 'in');
-        $this->postWithVariants('sales_invoice', $customer, $variants->random(3), 'out');
+        return $variants;
     }
 
     /**
      * @param  Collection<int, ItemVariant>  $variants
      */
-    private function postWithVariants(string $type, Party $party, $variants, string $direction): void
+    private function postWithVariants(string $type, Party $party, Collection $variants, string $direction): ?Document
     {
         $document = Document::create([
             'doc_type' => $type,
             'party_id' => $party->id,
-            'doc_date' => now()->subDays(fake()->numberBetween(1, 20)),
+            'doc_date' => now()->subDays(fake()->numberBetween(1, 60))->toDateString(),
             'status' => 'draft',
         ]);
 
-        foreach ($variants as $i => $variant) {
-            $qty = $direction === 'out'
-                ? min(fake()->numberBetween(1, 3), max($variant->stock_qty, 1))
-                : fake()->numberBetween(10, 30);
+        $lines = 0;
 
-            $price = $direction === 'out' ? $variant->item->unit_price : $variant->item->cost_price;
+        foreach ($variants as $i => $variant) {
+            $variant->refresh();
+
+            if ($direction === 'out') {
+                $qty = min(fake()->numberBetween(1, 3), (int) $variant->stock_qty);
+
+                if ($qty < 1) {
+                    continue;
+                }
+
+                $price = $variant->item->unit_price;
+            } else {
+                $qty = fake()->numberBetween(10, 30);
+                $price = $variant->item->cost_price;
+            }
 
             $line = $document->lines()->create([
                 'item_id' => $variant->item_id,
@@ -109,8 +158,40 @@ class ClothingDemoSeeder extends Seeder
                 'document_line_id' => $line->id,
                 'item_variant_id' => $variant->id,
             ]);
+
+            $lines++;
         }
 
-        $this->documents->post($document->load('lines', 'party'));
+        if ($lines === 0) {
+            $document->delete();
+
+            return null;
+        }
+
+        return $this->documents->post($document->load('lines', 'party'))->fresh();
+    }
+
+    private function maybePay(Document $document): void
+    {
+        $roll = fake()->numberBetween(1, 100);
+
+        if ($roll <= 30) {
+            return; // left open
+        }
+
+        $amount = $roll <= 70
+            ? (float) $document->total
+            : round((float) $document->total * fake()->randomFloat(2, 0.3, 0.6), 2);
+
+        $this->payments->record([
+            'direction' => $document->doc_type === 'sales_invoice' ? 'in' : 'out',
+            'party_id' => $document->party_id,
+            'payment_date' => Carbon::parse($document->doc_date)->toDateString(),
+            'amount' => $amount,
+            'method' => fake()->randomElement(['cash', 'card', 'transfer']),
+            'reference' => null,
+        ], [
+            ['document_id' => $document->id, 'amount' => $amount],
+        ]);
     }
 }
