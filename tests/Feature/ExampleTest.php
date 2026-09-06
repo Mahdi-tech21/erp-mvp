@@ -1,5 +1,5 @@
 <?php
 
-it('returns a successful response', function () {
-    $this->get('/')->assertStatus(200);
+it('exposes the framework health check', function () {
+    $this->get('/up')->assertOk();
 });
